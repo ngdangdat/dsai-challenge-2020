@@ -2,7 +2,7 @@ import sys
 import os
 from os.path import expanduser
 
-COL_WIDTH = 3
+COL_WIDTH = 4
 DELIMITER = "	"
 
 
@@ -30,7 +30,7 @@ def format_entry(entry, is_folder=False):
     return txt
 
 
-def parse_raw_folder(src):
+def parse_raw_path(src):
     if src.startswith("~/") or src == "~":
         paths = src.split("/")
         paths[0] = expanduser("~")
@@ -87,6 +87,7 @@ if __name__ == "__main__":
     files = []
 
     for entry in sys_args:
+        entry = parse_raw_path(entry)
         if os.path.isdir(entry):
             folders.append(entry)
         elif os.path.isfile(entry):
@@ -100,7 +101,6 @@ if __name__ == "__main__":
         print_list(files)
 
     for folder in folders:
-        folder = parse_raw_folder(folder)
         show_folder_content(
             folder,
             is_recursive=is_recursive,
