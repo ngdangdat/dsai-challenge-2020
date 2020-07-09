@@ -1,8 +1,9 @@
 import sys
 import os
-
 from os.path import expanduser
-home = expanduser("~")
+
+COL_WIDTH = 3
+DELIMITER = "	"
 
 
 class PrintStyle(object):
@@ -10,13 +11,23 @@ class PrintStyle(object):
     END = '\033[0m'
 
 
-def print_entry(entry, is_folder):
+def print_list(items):
+    print(DELIMITER.join(items))
+
+
+def print_in_col(items, col_num):
+    for i in range(0, len(items), col_num):
+        end_idx = i + col_num
+        print_list(items[i:end_idx])
+
+
+def format_entry(entry, is_folder=False):
     txt = None
     if is_folder:
         txt = f"{PrintStyle.BOLD}{entry}{PrintStyle.END}"
     else:
         txt = entry
-    print(txt, end="	")
+    return txt
 
 
 def parse_raw_folder(src):
@@ -27,15 +38,14 @@ def parse_raw_folder(src):
     return src
 
 
-def show_folder_content(folder_path, is_recursive=False, is_sub=False):
-    folder_path = parse_raw_folder(folder_path)
-
+def show_folder_content(folder_path, is_recursive=False, is_print_path=False):
     sub_folders = []
 
-    if is_sub:
+    if is_print_path:
         print(f"\n{folder_path}:")
 
-    for entry in sorted(os.listdir(folder_path)):
+    fmt_entries = []
+    for index, entry in enumerate(sorted(os.listdir(folder_path))):
         if entry.startswith("."):
             continue
 
@@ -44,11 +54,14 @@ def show_folder_content(folder_path, is_recursive=False, is_sub=False):
         if os.path.isdir(full_path):
             sub_folders.append(full_path)
             is_folder = True
-        print_entry(entry, is_folder)
+
+        fmt_entries.append(format_entry(entry, is_folder))
+
+    print_in_col(fmt_entries, COL_WIDTH)
 
     if is_recursive:
         for sub in sub_folders:
-            show_folder_content(sub, True, True)
+            show_folder_content(sub, is_recursive=True, is_print_path=True)
 
 
 if __name__ == "__main__":
@@ -71,13 +84,25 @@ if __name__ == "__main__":
                 is_recursive = True
 
     folders = []
+    files = []
+
     for entry in sys_args:
         if os.path.isdir(entry):
             folders.append(entry)
         elif os.path.isfile(entry):
-            print_entry(entry, False)
+            files.append(entry)
         else:
             print(f"ls: {entry}: No such file or directory")
 
+    is_print_path = False
+    if files:
+        is_print_path = True
+        print_list(files)
+
     for folder in folders:
-        show_folder_content(folder, is_recursive=is_recursive)
+        folder = parse_raw_folder(folder)
+        show_folder_content(
+            folder,
+            is_recursive=is_recursive,
+            is_print_path=is_print_path
+        )
